@@ -17,6 +17,17 @@ impl Game {
 
         let mut board = Board::new(size);
         board.spawn();
+        board.spawn();
+
+        Game {
+            size,
+            board,
+            max_tile,
+        }
+    }
+
+    pub fn from(size: usize, max_tile: usize, state: &str) -> Self {
+        let mut board = Board::from_state(size, state);
 
         Game {
             size,

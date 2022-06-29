@@ -1,25 +1,45 @@
 use rand::seq::SliceRandom;
-use std::fmt::Display;
+use std::{fmt::Display, ops::Add};
+
+use crate::game::Game;
+
+#[derive(Debug, PartialEq)]
+pub enum GameState {
+    Won,
+    Lost,
+    InProgress,
+}
 
 pub struct Board {
     size: usize,
-    pub inner: Vec<Vec<Tile>>,
+    inner: Vec<Vec<Tile>>,
+    pub state: GameState,
 }
 
 impl Board {
+    pub fn from_state(size: usize, state: &str) -> Self {
+        let mut inner = vec![vec![Tile(0); size]; size];
+
+        for (i, line) in state.lines().enumerate() {
+            for (j, tile) in line.split(",").enumerate() {
+                // println!("{}", tile)
+                let tile: usize = tile.trim().parse().unwrap();
+                inner[i][j] = Tile(tile);
+            }
+        }
+
+        Board {
+            size,
+            inner,
+            state: GameState::InProgress,
+        }
+    }
+
     pub fn new(size: usize) -> Self {
         Board {
             size,
             inner: vec![vec![Tile(0); size]; size],
-        }
-    }
-
-    pub fn print(&self) {
-        for row in &self.inner {
-            for tile in row {
-                print!("{} ", tile.0);
-            }
-            println!();
+            state: GameState::InProgress,
         }
     }
 
@@ -131,7 +151,61 @@ impl Board {
         }
     }
 
-    pub fn check(&mut self) {}
+    pub fn check(&mut self) {
+        let WIN = 2048;
+        let mut have_won = false;
+        let mut have_lost = true;
+
+        for i in 0..self.size {
+            for j in 0..self.size {
+                if self.inner[i][j].0 == WIN {
+                    have_won = true;
+                    have_lost = false;
+                    break;
+                }
+
+                // check if can move up
+                if i as i32 - 1 > 0 {
+                    if self.inner[i - 1][j].0 == 0 || self.inner[i - 1][j].0 == self.inner[i][j].0 {
+                        have_lost = false;
+                        break;
+                    }
+                }
+
+                // check if can move right
+                if j as i32 + 1 < self.size as i32 {
+                    if self.inner[i][j + 1].0 == 0 || self.inner[i][j + 1].0 == self.inner[i][j].0 {
+                        have_lost = false;
+                        break;
+                    }
+                }
+
+                // check if can move down
+                if i as i32 + 1 < self.size as i32 {
+                    if self.inner[i + 1][j].0 == 0 || self.inner[i + 1][j].0 == self.inner[i][j].0 {
+                        have_lost = false;
+                        break;
+                    }
+                }
+
+                // check if can move left
+                if j as i32 - 1 > 0 {
+                    if self.inner[i][j - 1].0 == 0 || self.inner[i][j - 1].0 == self.inner[i][j].0 {
+                        have_lost = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if have_won {
+            self.state = GameState::Won;
+        }
+
+        if have_lost {
+            self.state = GameState::Lost;
+        }
+    }
 
     pub fn spawn(&mut self) {
         let mut free_ids = Vec::new();
@@ -164,4 +238,14 @@ impl Display for Board {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Tile(usize);
+struct Tile(usize);
+
+impl Tile {}
+
+impl Add for Tile {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Tile(self.0 + other.0)
+    }
+}
