@@ -1,9 +1,9 @@
-use crate::board::*;
+use crate::{board::*, tile::Tile};
 
 pub struct Game {
     size: usize,
     pub board: Board,
-    max_tile: usize,
+    win_tile: Tile,
 }
 
 impl Game {
@@ -22,24 +22,28 @@ impl Game {
         Game {
             size,
             board,
-            max_tile,
+            win_tile: Tile::new(max_tile),
         }
     }
 
     pub fn from(size: usize, max_tile: usize, state: &str) -> Self {
-        let mut board = Board::from_state(size, state);
+        let board = Board::from_state(size, state);
 
         Game {
             size,
             board,
-            max_tile,
+            win_tile: Tile::new(max_tile),
         }
     }
 
     pub fn play(&mut self, direction: &str) {
         println!("You chose: {}", direction);
         self.board.play(direction);
-        self.board.check();
+        self.board.check(&self.win_tile);
         self.board.spawn();
+    }
+
+    pub fn check(&mut self) {
+        self.board.check(&self.win_tile);
     }
 }

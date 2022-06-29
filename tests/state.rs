@@ -11,7 +11,7 @@ fn in_progress() {
     "};
 
     let mut game = Game::from(4, 2048, state);
-    game.board.check();
+    game.check();
 
     assert_eq!(game.board.state, GameState::InProgress);
 }
@@ -26,7 +26,7 @@ fn lost() {
     "};
 
     let mut game = Game::from(4, 2048, state);
-    game.board.check();
+    game.check();
 
     assert_eq!(game.board.state, GameState::Lost);
 }
@@ -41,7 +41,7 @@ fn won() {
     "};
 
     let mut game = Game::from(4, 2048, state);
-    game.board.check();
+    game.check();
 
     assert_eq!(game.board.state, GameState::Won);
 }
@@ -56,14 +56,34 @@ fn next_move_win() {
     "};
 
     let mut game = Game::from(4, 2048, state);
-    game.board.check();
+    game.check();
 
     assert_eq!(game.board.state, GameState::InProgress);
 
     game.board.play("left");
-    game.board.check();
+    game.check();
 
     assert_eq!(game.board.state, GameState::Won);
+}
+
+#[test]
+fn alter_winning_number() {
+    let state = indoc! {"
+        1024,1024,0,0
+        0,0,0,0
+        0,0,0,0
+        0,0,0,0   
+    "};
+
+    let mut game = Game::from(4, 4096, state);
+    game.check();
+
+    assert_eq!(game.board.state, GameState::InProgress);
+
+    game.board.play("left");
+    game.check();
+
+    assert_eq!(game.board.state, GameState::InProgress);
 }
 
 #[test]
@@ -76,14 +96,14 @@ fn next_move_lose() {
     "};
 
     let mut game = Game::from(4, 2048, state);
-    game.board.check();
+    game.check();
 
     assert_eq!(game.board.state, GameState::InProgress);
 
     game.board.play("left");
     game.board.spawn();
     println!("{}", game.board);
-    game.board.check();
+    game.check();
 
     assert_eq!(game.board.state, GameState::Lost);
 }
