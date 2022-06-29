@@ -11,7 +11,7 @@ Use `cargo r` to initiate cli gameplay.
 - [ ] testing
 - [ ] cli params and usability 
 - [ ] library polish and sanity
-- [ ] cli pretty gameplay 
+- [x] cli pretty gameplay 
 - [ ] logging
 
 ### extra
