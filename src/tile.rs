@@ -5,7 +5,7 @@ use std::{
 
 use rand::Rng;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Copy)]
 pub struct Tile(usize);
 
 impl Tile {

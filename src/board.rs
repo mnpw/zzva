@@ -1,9 +1,9 @@
 use rand::seq::SliceRandom;
-use std::{fmt::Display, ops::Add};
+use std::{convert::Infallible, fmt::Display};
 
-use crate::tile::*;
+use crate::{game::Move, tile::*};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum GameState {
     Won,
     Lost,
@@ -93,8 +93,8 @@ impl Board {
     ///
     /// [2, 2, 4, 2] collapses in [4, 4, 2, 0] in left direction.
     /// [2, 2, 4, 2] collapses in [0, 4, 4, 2] in right direction.
-
-    fn collapse(mut row: Vec<Tile>, direction: &str) -> Vec<Tile> {
+    fn collapse(row: &Vec<Tile>, direction: &str) -> Vec<Tile> {
+        let mut row = row.clone();
         let size = row.len();
         let mut new_row: Vec<Tile> = Vec::new();
 
@@ -111,54 +111,74 @@ impl Board {
         new_row
     }
 
-    pub fn play(&mut self, direction: &str) {
-        // horizontal move
-        // go row by row
-        if direction == "left" || direction == "right" {
-            for row in 0..self.size {
-                // first impose gravity and move all elements
-                let old_row = self.inner[row].clone();
-                let mut new_row = vec![Tile::default(); self.size];
-
-                if direction == "left" {
-                    new_row = Self::collapse(old_row, "<-");
-                } else if direction == "right" {
-                    new_row = Self::collapse(old_row, "->");
-                }
-
-                let _ = std::mem::replace(&mut self.inner[row], new_row);
-                // remove all zeros from old_row
-                // paste the old_row onto new_row depending on direciton
-            }
-        }
-
-        // vertical move
-        // go column by column
-        if direction == "up" || direction == "down" {
-            for col in 0..self.size {
-                // first impose gravity and move all elements
-
-                let mut old_row = Vec::new();
-                for row in 0..self.size {
-                    old_row.push(self.inner[row][col].clone());
-                }
-
-                let mut new_row = vec![Tile::default(); self.size];
-
-                if direction == "up" {
-                    new_row = Self::collapse(old_row, "<-");
-                } else if direction == "down" {
-                    new_row = Self::collapse(old_row, "->");
-                }
-
-                for row in 0..self.size {
-                    self.inner[row][col] = new_row[row].clone();
-                }
-            }
-        }
+    fn get_row(&self, id: usize) -> Vec<Tile> {
+        self.inner[id].clone()
     }
 
-    pub fn check(&mut self, win_tile: &Tile) {
+    fn get_col(&self, id: usize) -> Vec<Tile> {
+        let mut column = Vec::new();
+        for row in 0..self.size {
+            column.push(self.inner[row][id]);
+        }
+
+        column
+    }
+
+    pub fn play(&mut self, direction: &Move) -> Result<(), &str> {
+        let mut any_tiles_combined = false;
+
+        match *direction {
+            Move::Up | Move::Down => {
+                for col in 0..self.size {
+                    // extract each column
+                    let old_col = self.get_col(col);
+
+                    // collapse the column in move direction
+                    let new_col = if *direction == Move::Up {
+                        Self::collapse(&old_col, "<-")
+                    } else {
+                        Self::collapse(&old_col, "->")
+                    };
+
+                    // check if move did anyting
+                    any_tiles_combined = any_tiles_combined || old_col != new_col;
+
+                    // replace old column by collapsed column
+                    for row in 0..self.size {
+                        self.inner[row][col] = new_col[row].clone();
+                    }
+                }
+            }
+            Move::Left | Move::Right => {
+                for row in 0..self.size {
+                    // extract each column
+                    let old_row = self.get_row(row);
+
+                    // collapse the column in move direction
+                    let new_row = if *direction == Move::Left {
+                        Self::collapse(&old_row, "<-")
+                    } else {
+                        Self::collapse(&old_row, "->")
+                    };
+
+                    // check if move did anyting
+                    any_tiles_combined = any_tiles_combined || old_row != new_row;
+
+                    // replace old column by collapsed column
+                    let _ = std::mem::replace(&mut self.inner[row], new_row);
+                }
+            }
+            Move::Invalid => return Err("Invalid move."),
+        }
+
+        if !any_tiles_combined {
+            return Err("Invalid move. Nothing happened.");
+        }
+
+        Ok(())
+    }
+
+    pub fn check(&mut self, win_tile: &Tile) -> Result<GameState, Infallible> {
         let mut have_won = false;
         let mut have_lost = true;
 
@@ -211,9 +231,11 @@ impl Board {
         if have_lost {
             self.state = GameState::Lost;
         }
+
+        Ok(self.state)
     }
 
-    pub fn spawn(&mut self) {
+    pub fn spawn(&mut self) -> Result<(), &'static str> {
         let mut free_ids = Vec::new();
 
         for row in 0..self.size {
@@ -226,7 +248,10 @@ impl Board {
 
         if let Some(&pos) = free_ids.choose(&mut rand::thread_rng()) {
             self.inner[pos.0][pos.1] = Tile::random();
+            return Ok(());
         }
+
+        Err("No position available for spawn.")
     }
 }
 
@@ -268,7 +293,7 @@ mod tests {
     #[test]
     fn test_collapse_left() {
         let row = create_tile_row("2,2,4,2");
-        let row = Board::collapse(row, "<-");
+        let row = Board::collapse(&row, "<-");
 
         assert_eq!(row, create_tile_row("4,4,2,0"));
     }
@@ -276,7 +301,7 @@ mod tests {
     #[test]
     fn test_collapse_right() {
         let row = create_tile_row("2,2,4,2");
-        let row = Board::collapse(row, "->");
+        let row = Board::collapse(&row, "->");
 
         assert_eq!(row, create_tile_row("0,4,4,2"));
     }
