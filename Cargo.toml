@@ -4,6 +4,13 @@ version = "0.1.0"
 authors = ["Mrinal Paliwal <mrinalpaliwal98@gmail.com>"]
 edition = "2021"
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/bin/main.rs"
+name = "zzva"
+
 [dependencies]
 rand = "0.8.5"
 
