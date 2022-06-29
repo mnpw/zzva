@@ -1,7 +1,7 @@
 use rand::seq::SliceRandom;
 use std::{fmt::Display, ops::Add};
 
-use crate::game::Game;
+use crate::tile::*;
 
 #[derive(Debug, PartialEq)]
 pub enum GameState {
@@ -17,14 +17,20 @@ pub struct Board {
 }
 
 impl Board {
+    /// Create a board from a give size and state in string form.
+    ///
+    /// The state should look like:
+    /// 0,8,0,0
+    /// 0,0,2,0
+    /// ..
+    /// 0,4,0,0
     pub fn from_state(size: usize, state: &str) -> Self {
-        let mut inner = vec![vec![Tile(0); size]; size];
+        let mut inner = vec![vec![Tile::default(); size]; size];
 
         for (i, line) in state.lines().enumerate() {
             for (j, tile) in line.split(",").enumerate() {
-                // println!("{}", tile)
                 let tile: usize = tile.trim().parse().unwrap();
-                inner[i][j] = Tile(tile);
+                inner[i][j] = Tile::new(tile);
             }
         }
 
@@ -35,30 +41,31 @@ impl Board {
         }
     }
 
+    /// Create a board from a given size.
     pub fn new(size: usize) -> Self {
         Board {
             size,
-            inner: vec![vec![Tile(0); size]; size],
+            inner: vec![vec![Tile::default(); size]; size],
             state: GameState::InProgress,
         }
     }
 
+    /// Collapse a row of tiles in right to left direction.
+    ///
+    /// [2, 2, 4, 2] collapses in [4, 4, 2]
     fn collapse_inner(mut row: Vec<Tile>) -> Vec<Tile> {
-        // collapse a row in <- direction
-        // [2, 2, 4, 2] collapses in [4, 4, 2]
-
-        // clean the row
-        // remove all empty tiles
-
         row.reverse();
 
+        // remove all empty tiles
         let mut row = row
             .iter()
-            .filter(|&n| n.0 != 0)
+            .filter(|&n| *n != Tile::default())
             .map(|n| n.clone())
             .collect::<Vec<Tile>>();
 
         let mut new_vec = Vec::new();
+
+        // collapse tiles into one by taking two at a time
         while !row.is_empty() {
             let last = row.pop();
             let second_last = row.pop();
@@ -68,7 +75,7 @@ impl Board {
                 let second_last = second_last.unwrap();
 
                 if last == second_last {
-                    new_vec.push(Tile(last.0 + second_last.0));
+                    new_vec.push(Tile::new(*last + *second_last));
                 } else {
                     new_vec.push(last);
                     row.push(second_last);
@@ -82,22 +89,25 @@ impl Board {
         new_vec
     }
 
+    /// Collapse a row in chosen direction.
+    ///
+    /// [2, 2, 4, 2] collapses in [4, 4, 2, 0] in left direction.
+    /// [2, 2, 4, 2] collapses in [0, 4, 4, 2] in right direction.
+
     fn collapse(mut row: Vec<Tile>, direction: &str) -> Vec<Tile> {
-        // println!("old row: {:?}", row);
         let size = row.len();
         let mut new_row: Vec<Tile> = Vec::new();
 
         if direction == "<-" {
             new_row = Self::collapse_inner(row);
-            new_row.resize(size, Tile(0));
+            new_row.resize(size, Tile::default());
         } else if direction == "->" {
             row.reverse();
             new_row = Self::collapse_inner(row);
-            new_row.resize(size, Tile(0));
+            new_row.resize(size, Tile::default());
             new_row.reverse();
         }
 
-        // println!("new row: {:?}", new_row);
         new_row
     }
 
@@ -108,7 +118,7 @@ impl Board {
             for row in 0..self.size {
                 // first impose gravity and move all elements
                 let old_row = self.inner[row].clone();
-                let mut new_row = vec![Tile(0); self.size];
+                let mut new_row = vec![Tile::default(); self.size];
 
                 if direction == "left" {
                     new_row = Self::collapse(old_row, "<-");
@@ -133,7 +143,7 @@ impl Board {
                     old_row.push(self.inner[row][col].clone());
                 }
 
-                let mut new_row = vec![Tile(0); self.size];
+                let mut new_row = vec![Tile::default(); self.size];
 
                 if direction == "up" {
                     new_row = Self::collapse(old_row, "<-");
@@ -144,21 +154,17 @@ impl Board {
                 for row in 0..self.size {
                     self.inner[row][col] = new_row[row].clone();
                 }
-
-                // remove all zeros from old_row
-                // paste the old_row onto new_row depending on direciton
             }
         }
     }
 
-    pub fn check(&mut self) {
-        let WIN = 2048;
+    pub fn check(&mut self, win_tile: &Tile) {
         let mut have_won = false;
         let mut have_lost = true;
 
         for i in 0..self.size {
             for j in 0..self.size {
-                if self.inner[i][j].0 == WIN {
+                if self.inner[i][j] == *win_tile {
                     have_won = true;
                     have_lost = false;
                     break;
@@ -166,7 +172,7 @@ impl Board {
 
                 // check if can move up
                 if i as i32 - 1 > 0 {
-                    if self.inner[i - 1][j].0 == 0 || self.inner[i - 1][j].0 == self.inner[i][j].0 {
+                    if self.inner[i - 1][j].is_empty() || self.inner[i - 1][j] == self.inner[i][j] {
                         have_lost = false;
                         break;
                     }
@@ -174,7 +180,7 @@ impl Board {
 
                 // check if can move right
                 if j as i32 + 1 < self.size as i32 {
-                    if self.inner[i][j + 1].0 == 0 || self.inner[i][j + 1].0 == self.inner[i][j].0 {
+                    if self.inner[i][j + 1].is_empty() || self.inner[i][j + 1] == self.inner[i][j] {
                         have_lost = false;
                         break;
                     }
@@ -182,7 +188,7 @@ impl Board {
 
                 // check if can move down
                 if i as i32 + 1 < self.size as i32 {
-                    if self.inner[i + 1][j].0 == 0 || self.inner[i + 1][j].0 == self.inner[i][j].0 {
+                    if self.inner[i + 1][j].is_empty() || self.inner[i + 1][j] == self.inner[i][j] {
                         have_lost = false;
                         break;
                     }
@@ -190,7 +196,7 @@ impl Board {
 
                 // check if can move left
                 if j as i32 - 1 > 0 {
-                    if self.inner[i][j - 1].0 == 0 || self.inner[i][j - 1].0 == self.inner[i][j].0 {
+                    if self.inner[i][j - 1].is_empty() || self.inner[i][j - 1] == self.inner[i][j] {
                         have_lost = false;
                         break;
                     }
@@ -212,40 +218,66 @@ impl Board {
 
         for row in 0..self.size {
             for col in 0..self.size {
-                if self.inner[row][col].0 == 0 {
+                if self.inner[row][col].is_empty() {
                     free_ids.push((row, col));
                 }
             }
         }
 
         if let Some(&pos) = free_ids.choose(&mut rand::thread_rng()) {
-            self.inner[pos.0][pos.1] = Tile(2);
+            self.inner[pos.0][pos.1] = Tile::random();
         }
     }
 }
 
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let line_width = 6 * self.size + 1;
+        let line_separator = "=".repeat(line_width);
+
+        writeln!(f, "{}", line_separator)?;
         for row in &self.inner {
             for tile in row {
-                write!(f, "{} ", tile.0)?;
+                write!(f, "|{}", tile)?;
             }
-            writeln!(f)?;
+            writeln!(f, "|\n{}", line_separator)?;
         }
 
         Ok(())
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
-struct Tile(usize);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-impl Tile {}
+    fn create_tile_row(input: &str) -> Vec<Tile> {
+        let mut row: Vec<Tile> = Vec::new();
 
-impl Add for Tile {
-    type Output = Self;
+        for char in input.split(',') {
+            row.push(Tile::new(
+                char.trim()
+                    .parse::<usize>()
+                    .expect("Invalid tile row input."),
+            ));
+        }
 
-    fn add(self, other: Self) -> Self {
-        Tile(self.0 + other.0)
+        row
+    }
+
+    #[test]
+    fn test_collapse_left() {
+        let row = create_tile_row("2,2,4,2");
+        let row = Board::collapse(row, "<-");
+
+        assert_eq!(row, create_tile_row("4,4,2,0"));
+    }
+
+    #[test]
+    fn test_collapse_right() {
+        let row = create_tile_row("2,2,4,2");
+        let row = Board::collapse(row, "->");
+
+        assert_eq!(row, create_tile_row("0,4,4,2"));
     }
 }
