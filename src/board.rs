@@ -132,14 +132,30 @@ impl Board {
         let mut have_won = false;
         let mut have_lost = true;
 
+        // check if won
         for i in 0..self.size {
             for j in 0..self.size {
+                debug!(
+                    "Checking tile: {} | win tile: {}",
+                    self.inner[i][j], win_tile
+                );
                 if self.inner[i][j] == *win_tile {
                     have_won = true;
                     have_lost = false;
                     break;
                 }
+            }
+        }
 
+        if have_won {
+            info!("[end] Check - win tile: {}", win_tile);
+            self.state = GameState::Won;
+            return Ok(self.state);
+        }
+
+        // check if lost
+        for i in 0..self.size {
+            for j in 0..self.size {
                 // check if can move up
                 if i as i32 - 1 > 0 {
                     if self.inner[i - 1][j].is_empty() || self.inner[i - 1][j] == self.inner[i][j] {
@@ -174,15 +190,12 @@ impl Board {
             }
         }
 
-        if have_won {
-            self.state = GameState::Won;
-        }
-
         if have_lost {
+            info!("[end] Check - win tile: {}", win_tile);
             self.state = GameState::Lost;
+            return Ok(self.state);
         }
 
-        info!("[end] Check - win tile: {}", win_tile);
         Ok(self.state)
     }
 
