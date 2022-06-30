@@ -13,6 +13,7 @@ name = "zzva"
 
 [dependencies]
 rand = "0.8.5"
+clap = { version = "3.2.7", features = ["derive"] }
 
 [dev-dependencies]
 indoc = "1.0"
