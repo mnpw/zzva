@@ -13,7 +13,7 @@ For help, use `cargo r -- --help`.
 ## Todo
 ### basic
 - [x] game engine
-- [ ] testing
+- [x] testing
 - [x] cli params and usability 
 - [x] library polish and sanity
 - [x] cli pretty gameplay 
