@@ -134,11 +134,83 @@ mod tests {
     }
 
     #[test]
-    fn next_move_win() {
+    fn next_move_win_top_left() {
         let state = indoc! {"
         1024,1024,0,0
         0,0,0,0
         0,0,0,0
+        0,0,0,0   
+    "};
+
+        let mut game = Game::from(4, 2048, state);
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::InProgress);
+
+        game.play("left").unwrap();
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::Won);
+    }
+
+    #[test]
+    fn next_move_win_top_right() {
+        let state = indoc! {"
+        0,0,1024,1024
+        0,0,0,0
+        0,0,0,0
+        0,0,0,0   
+    "};
+
+        let mut game = Game::from(4, 2048, state);
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::InProgress);
+
+        game.play("right").unwrap();
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::Won);
+    }
+
+    #[test]
+    fn next_move_win_bottom_left() {
+        let state = indoc! {"
+        0,0,0,0
+        0,0,0,0
+        0,0,0,0   
+        1024,1024,0,0
+    "};
+
+        let mut game = Game::from(4, 2048, state);
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::InProgress);
+
+        game.play("left").unwrap();
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::Won);
+    }
+
+    #[test]
+    fn next_move_win_bottom_right() {
+        let state = indoc! {"
+        0,0,0,0
+        0,0,0,0
+        0,0,0,0   
+        0,0,1024,1024
+    "};
+
+        let mut game = Game::from(4, 2048, state);
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::InProgress);
+
+        game.play("right").unwrap();
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::Won);
+    }
+
+    #[test]
+    fn next_move_win_center() {
+        let state = indoc! {"
+        0,0,0,0
+        0,0,0,0
+        0,1024,1024,0
         0,0,0,0   
     "};
 
