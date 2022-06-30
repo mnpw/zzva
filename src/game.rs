@@ -134,6 +134,20 @@ mod tests {
     }
 
     #[test]
+    fn won_full_board() {
+        let state = indoc! {"
+        2,4,2,4
+        4,2,8,2
+        2,4,2,4
+        4,2,4,2
+    "};
+
+        let mut game = Game::from(4, 8, state);
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::Won);
+    }
+
+    #[test]
     fn next_move_win_top_left() {
         let state = indoc! {"
         1024,1024,0,0
