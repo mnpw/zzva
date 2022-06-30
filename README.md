@@ -5,7 +5,7 @@
 ## Quick Start
 Use `cargo r` to initiate cli gameplay.
 
-Configuration for board size and winning tile is supported.
+Configuration for board size and winning tile is supported.\
 To configure and run, use `cargo r -- --board <BOARD> --max <MAX>`.
 
 For help, use `cargo r -- --help`.

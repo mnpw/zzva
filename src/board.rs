@@ -9,7 +9,7 @@ use crate::{
 pub struct Board {
     size: usize,
     inner: Vec<Vec<Tile>>,
-    pub state: GameState,
+    state: GameState,
 }
 
 impl Board {
@@ -44,6 +44,150 @@ impl Board {
             inner: vec![vec![Tile::default(); size]; size],
             state: GameState::InProgress,
         }
+    }
+
+    /// Execute a move on the board on the chosen direction.
+    ///
+    /// For the following board and move direction 'Up',
+    /// 0 0 0 0
+    /// 0 0 0 0
+    /// 0 2 0 0
+    /// 0 0 0 0
+    /// the board changes to:
+    /// 0 2 0 0
+    /// 0 0 0 0
+    /// 0 0 0 0
+    /// 0 0 0 0
+    pub fn play(&mut self, direction: &Move) -> Result<(), &'static str> {
+        let mut any_tiles_combined = false;
+
+        match *direction {
+            Move::Up | Move::Down => {
+                for col in 0..self.size {
+                    // extract each column
+                    let old_col = self.get_col(col);
+
+                    // collapse the column in move direction
+                    let new_col = if *direction == Move::Up {
+                        Self::collapse(&old_col, "<-")
+                    } else {
+                        Self::collapse(&old_col, "->")
+                    };
+
+                    // check if move did anyting
+                    any_tiles_combined = any_tiles_combined || old_col != new_col;
+
+                    // replace old column by collapsed column
+                    for row in 0..self.size {
+                        self.inner[row][col] = new_col[row].clone();
+                    }
+                }
+            }
+            Move::Left | Move::Right => {
+                for row in 0..self.size {
+                    // extract each column
+                    let old_row = self.get_row(row);
+
+                    // collapse the column in move direction
+                    let new_row = if *direction == Move::Left {
+                        Self::collapse(&old_row, "<-")
+                    } else {
+                        Self::collapse(&old_row, "->")
+                    };
+
+                    // check if move did anyting
+                    any_tiles_combined = any_tiles_combined || old_row != new_row;
+
+                    // replace old column by collapsed column
+                    let _ = std::mem::replace(&mut self.inner[row], new_row);
+                }
+            }
+            Move::Invalid => return Err("Invalid move."),
+        }
+
+        if !any_tiles_combined {
+            return Err("Invalid move. Nothing happened.");
+        }
+
+        Ok(())
+    }
+
+    /// Walk through the board and determine game state.
+    pub fn check(&mut self, win_tile: &Tile) -> Result<GameState, Infallible> {
+        let mut have_won = false;
+        let mut have_lost = true;
+
+        for i in 0..self.size {
+            for j in 0..self.size {
+                if self.inner[i][j] == *win_tile {
+                    have_won = true;
+                    have_lost = false;
+                    break;
+                }
+
+                // check if can move up
+                if i as i32 - 1 > 0 {
+                    if self.inner[i - 1][j].is_empty() || self.inner[i - 1][j] == self.inner[i][j] {
+                        have_lost = false;
+                        break;
+                    }
+                }
+
+                // check if can move right
+                if j as i32 + 1 < self.size as i32 {
+                    if self.inner[i][j + 1].is_empty() || self.inner[i][j + 1] == self.inner[i][j] {
+                        have_lost = false;
+                        break;
+                    }
+                }
+
+                // check if can move down
+                if i as i32 + 1 < self.size as i32 {
+                    if self.inner[i + 1][j].is_empty() || self.inner[i + 1][j] == self.inner[i][j] {
+                        have_lost = false;
+                        break;
+                    }
+                }
+
+                // check if can move left
+                if j as i32 - 1 > 0 {
+                    if self.inner[i][j - 1].is_empty() || self.inner[i][j - 1] == self.inner[i][j] {
+                        have_lost = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if have_won {
+            self.state = GameState::Won;
+        }
+
+        if have_lost {
+            self.state = GameState::Lost;
+        }
+
+        Ok(self.state)
+    }
+
+    /// Spawn a new tile on the board.
+    pub fn spawn(&mut self) -> Result<(), &'static str> {
+        let mut free_ids = Vec::new();
+
+        for row in 0..self.size {
+            for col in 0..self.size {
+                if self.inner[row][col].is_empty() {
+                    free_ids.push((row, col));
+                }
+            }
+        }
+
+        if let Some(&pos) = free_ids.choose(&mut rand::thread_rng()) {
+            self.inner[pos.0][pos.1] = Tile::random();
+            return Ok(());
+        }
+
+        Err("No position available for spawn.")
     }
 
     /// Collapse a row of tiles in right to left direction.
@@ -118,136 +262,6 @@ impl Board {
         }
 
         column
-    }
-
-    pub fn play(&mut self, direction: &Move) -> Result<(), &'static str> {
-        let mut any_tiles_combined = false;
-
-        match *direction {
-            Move::Up | Move::Down => {
-                for col in 0..self.size {
-                    // extract each column
-                    let old_col = self.get_col(col);
-
-                    // collapse the column in move direction
-                    let new_col = if *direction == Move::Up {
-                        Self::collapse(&old_col, "<-")
-                    } else {
-                        Self::collapse(&old_col, "->")
-                    };
-
-                    // check if move did anyting
-                    any_tiles_combined = any_tiles_combined || old_col != new_col;
-
-                    // replace old column by collapsed column
-                    for row in 0..self.size {
-                        self.inner[row][col] = new_col[row].clone();
-                    }
-                }
-            }
-            Move::Left | Move::Right => {
-                for row in 0..self.size {
-                    // extract each column
-                    let old_row = self.get_row(row);
-
-                    // collapse the column in move direction
-                    let new_row = if *direction == Move::Left {
-                        Self::collapse(&old_row, "<-")
-                    } else {
-                        Self::collapse(&old_row, "->")
-                    };
-
-                    // check if move did anyting
-                    any_tiles_combined = any_tiles_combined || old_row != new_row;
-
-                    // replace old column by collapsed column
-                    let _ = std::mem::replace(&mut self.inner[row], new_row);
-                }
-            }
-            Move::Invalid => return Err("Invalid move."),
-        }
-
-        if !any_tiles_combined {
-            return Err("Invalid move. Nothing happened.");
-        }
-
-        Ok(())
-    }
-
-    pub fn check(&mut self, win_tile: &Tile) -> Result<GameState, Infallible> {
-        let mut have_won = false;
-        let mut have_lost = true;
-
-        for i in 0..self.size {
-            for j in 0..self.size {
-                if self.inner[i][j] == *win_tile {
-                    have_won = true;
-                    have_lost = false;
-                    break;
-                }
-
-                // check if can move up
-                if i as i32 - 1 > 0 {
-                    if self.inner[i - 1][j].is_empty() || self.inner[i - 1][j] == self.inner[i][j] {
-                        have_lost = false;
-                        break;
-                    }
-                }
-
-                // check if can move right
-                if j as i32 + 1 < self.size as i32 {
-                    if self.inner[i][j + 1].is_empty() || self.inner[i][j + 1] == self.inner[i][j] {
-                        have_lost = false;
-                        break;
-                    }
-                }
-
-                // check if can move down
-                if i as i32 + 1 < self.size as i32 {
-                    if self.inner[i + 1][j].is_empty() || self.inner[i + 1][j] == self.inner[i][j] {
-                        have_lost = false;
-                        break;
-                    }
-                }
-
-                // check if can move left
-                if j as i32 - 1 > 0 {
-                    if self.inner[i][j - 1].is_empty() || self.inner[i][j - 1] == self.inner[i][j] {
-                        have_lost = false;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if have_won {
-            self.state = GameState::Won;
-        }
-
-        if have_lost {
-            self.state = GameState::Lost;
-        }
-
-        Ok(self.state)
-    }
-
-    pub fn spawn(&mut self) -> Result<(), &'static str> {
-        let mut free_ids = Vec::new();
-
-        for row in 0..self.size {
-            for col in 0..self.size {
-                if self.inner[row][col].is_empty() {
-                    free_ids.push((row, col));
-                }
-            }
-        }
-
-        if let Some(&pos) = free_ids.choose(&mut rand::thread_rng()) {
-            self.inner[pos.0][pos.1] = Tile::random();
-            return Ok(());
-        }
-
-        Err("No position available for spawn.")
     }
 }
 
