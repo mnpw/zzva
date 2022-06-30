@@ -1,21 +1,6 @@
-[package]
-name = "zzva"
-version = "1.0.0"
-authors = ["Mrinal Paliwal <mrinalpaliwal98@gmail.com>"]
-edition = "2021"
+[workspace]
 
-[lib]
-path = "src/lib.rs"
-
-[[bin]]
-path = "src/bin/main.rs"
-name = "zzva"
-
-[dependencies]
-rand = "0.8.5"
-clap = { version = "3.2.7", features = ["derive"] }
-log = "0.4.0"
-env_logger = "0.8.4"
-
-[dev-dependencies]
-indoc = "1.0"
+members = [
+    "zzva",
+    "zzva-web"
+]
