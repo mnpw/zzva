@@ -10,7 +10,7 @@ fn fuzz() {
 
     for size in sizes {
         for win_tile in winning_tiles {
-            let mut game = Game::init(size, win_tile).unwrap();
+            let mut game = Game::new(size, win_tile).unwrap();
 
             let vals: Vec<usize> = (0..moves_num)
                 .map(|_| rand::thread_rng().gen_range(0..moves.len()))

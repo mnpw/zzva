@@ -1,3 +1,4 @@
+use log::{debug, info, warn};
 use rand::seq::SliceRandom;
 use std::{convert::Infallible, fmt::Display};
 
@@ -30,6 +31,7 @@ impl Board {
             }
         }
 
+        info!("Game loaded!");
         Board {
             size,
             inner,
@@ -39,6 +41,7 @@ impl Board {
 
     /// Create a board from a given size.
     pub fn new(size: usize) -> Self {
+        info!("Game created!");
         Board {
             size,
             inner: vec![vec![Tile::default(); size]; size],
@@ -59,6 +62,7 @@ impl Board {
     /// 0 0 0 0
     /// 0 0 0 0
     pub fn play(&mut self, direction: &Move) -> Result<(), &'static str> {
+        info!("[start] Play - move chosen: {}", direction);
         let mut any_tiles_combined = false;
 
         match *direction {
@@ -73,6 +77,11 @@ impl Board {
                     } else {
                         Self::collapse(&old_col, "->")
                     };
+
+                    debug!(
+                        "id: {} | move: {} | Column collapsed {:?} -> {:?}",
+                        col, direction, old_col, new_col
+                    );
 
                     // check if move did anyting
                     any_tiles_combined = any_tiles_combined || old_col != new_col;
@@ -95,6 +104,11 @@ impl Board {
                         Self::collapse(&old_row, "->")
                     };
 
+                    debug!(
+                        "id: {} | move: {} | Row collapsed {:?} -> {:?}",
+                        row, direction, old_row, new_row
+                    );
+
                     // check if move did anyting
                     any_tiles_combined = any_tiles_combined || old_row != new_row;
 
@@ -105,15 +119,16 @@ impl Board {
             Move::Invalid => return Err("Invalid move."),
         }
 
+        info!("[end] Play - move chosen: {}", direction);
         if !any_tiles_combined {
             return Err("Invalid move. Nothing happened.");
         }
-
         Ok(())
     }
 
     /// Walk through the board and determine game state.
     pub fn check(&mut self, win_tile: &Tile) -> Result<GameState, Infallible> {
+        info!("[start] Check - win tile: {}", win_tile);
         let mut have_won = false;
         let mut have_lost = true;
 
@@ -167,11 +182,13 @@ impl Board {
             self.state = GameState::Lost;
         }
 
+        info!("[end] Check - win tile: {}", win_tile);
         Ok(self.state)
     }
 
     /// Spawn a new tile on the board.
     pub fn spawn(&mut self) -> Result<(), &'static str> {
+        info!("[start] Spawn");
         let mut free_ids = Vec::new();
 
         for row in 0..self.size {
@@ -183,11 +200,13 @@ impl Board {
         }
 
         if let Some(&pos) = free_ids.choose(&mut rand::thread_rng()) {
+            info!("[end] Spawn");
             self.inner[pos.0][pos.1] = Tile::random();
             return Ok(());
+        } else {
+            warn!("[end] Spawn");
+            return Err("No position available for spawn.");
         }
-
-        Err("No position available for spawn.")
     }
 
     /// Collapse a row of tiles in right to left direction.
