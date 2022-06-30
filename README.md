@@ -5,8 +5,12 @@
 ## Quick Start
 Use `cargo r` to initiate cli gameplay.
 
+
+## Usage
 Configuration for board size and winning tile is supported.\
 To configure and run, use `cargo r -- --board <BOARD> --max <MAX>`.
+
+To see logs, use `RUST_LOG=<LEVEL> cargo r -- --board <BOARD> --max <MAX>`
 
 For help, use `cargo r -- --help`.
 
@@ -17,7 +21,7 @@ For help, use `cargo r -- --help`.
 - [x] cli params and usability 
 - [x] library polish and sanity
 - [x] cli pretty gameplay 
-- [ ] logging
+- [x] logging
 
 ### extra
 - [ ] play http endpoints
