@@ -2,12 +2,13 @@ use clap::Parser;
 use zzva::{cli::Args, game::*, state::GameState};
 
 fn main() {
+    env_logger::init();
     let args = Args::parse();
 
     let size = args.board;
     let max_tile = args.max;
 
-    let mut game = Game::init(size.into(), max_tile.into()).unwrap();
+    let mut game = Game::new(size.into(), max_tile.into()).unwrap();
 
     loop {
         println!("{}", game);
@@ -21,7 +22,10 @@ fn main() {
             Ok(state) => {
                 println!("{}", state.message);
                 match state.game_state {
-                    GameState::Won | GameState::Lost => break,
+                    GameState::Won | GameState::Lost => {
+                        println!("{}", game);
+                        break;
+                    }
                     GameState::InProgress => continue,
                 }
             }
