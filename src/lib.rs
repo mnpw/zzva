@@ -1,3 +1,7 @@
-pub mod board;
+mod board;
+mod tile;
+
+// exposed gameplay modules
+pub mod cli;
 pub mod game;
-pub mod tile;
+pub mod state;

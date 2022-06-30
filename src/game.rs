@@ -1,11 +1,16 @@
-use std::{convert::Infallible, fmt::Display, io::Error};
+use std::fmt::Display;
 
-use crate::{board::*, tile::Tile};
+use crate::{
+    board::*,
+    state::{GameState, Move, State},
+    tile::Tile,
+};
 
 pub struct Game {
-    size: usize,
+    _size: usize,
     board: Board,
     win_tile: Tile,
+    state: State,
 }
 
 impl Display for Game {
@@ -14,60 +19,17 @@ impl Display for Game {
     }
 }
 
-#[derive(PartialEq)]
-pub enum Move {
-    Up,
-    Down,
-    Left,
-    Right,
-    Invalid,
-}
-
-impl Move {
-    fn from(direction: &str) -> Self {
-        let mv = match direction.to_ascii_lowercase().as_str() {
-            "up" => Self::Up,
-            "down" => Self::Down,
-            "left" => Self::Left,
-            "right" => Self::Right,
-            _ => Self::Invalid,
-        };
-
-        mv
-    }
-}
-
-impl Display for Move {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let display = match self {
-            &Self::Up => "⬆",
-            &Self::Down => "⬇",
-            &Self::Left => "⬅",
-            &Self::Right => "➡",
-            _ => "Invalid move ❌",
-        };
-
-        write!(f, "{}", display)
-    }
-}
-
 impl Game {
     pub fn init(size: usize, max_tile: usize) -> Result<Self, &'static str> {
-        // game: inits with two tiles
-        // two tiles are the smallest two tiles
-        // the likelihood of smaller tile occuring is more
-        // from a trial game it seems like the ratio is 5:1 for 2:4 tiles
-
-        // game starts off with two tiles, then tile is spawned at every cycle
-
         let mut board = Board::new(size);
         board.spawn()?;
         board.spawn()?;
 
         Ok(Game {
-            size,
+            _size: size,
             board,
             win_tile: Tile::new(max_tile),
+            state: Default::default(),
         })
     }
 
@@ -75,43 +37,156 @@ impl Game {
         let board = Board::from_state(size, state);
 
         Game {
-            size,
+            _size: size,
             board,
             win_tile: Tile::new(max_tile),
+            state: Default::default(),
         }
     }
 
-    // pub fn run(&mut self)
+    pub fn play(&mut self, direction: &str) -> Result<State, &'static str> {
+        let mut message = String::new();
 
-    pub fn play(&mut self, direction: &str) {
         let mv = Move::from(direction);
-        println!("You chose: {}", mv);
+        message.push_str(&format!("You chose: {}\n", mv));
 
         // Play the move
         if let Err(e) = self.board.play(&mv) {
-            eprintln!("[error] {}", e);
-            return;
+            return Err(e);
         }
 
         // Evaluate the game state
-        if let Ok(state) = self.board.check(&self.win_tile) {
-            let status = match state {
-                GameState::Won => "You Won! Game finished. 🥳🥂",
-                GameState::Lost => "You Lost! :(",
-                GameState::InProgress => {
-                    self.board.spawn();
-                    return;
-                }
-            };
-            println!("{}", status);
-        }
+        let game_state = self.board.check(&self.win_tile).unwrap();
+        let status = match game_state {
+            GameState::Won => "You Won! Game finished. 🥳🥂",
+            GameState::Lost => "You Lost! :(",
+            GameState::InProgress => match self.board.spawn() {
+                Ok(()) => "",
+                Err(e) => return Err(e),
+            },
+        };
+        message.push_str(&status);
+
+        self.state = State {
+            game_state,
+            message,
+        };
+
+        Ok(self.state.clone())
     }
 
-    pub fn spawn(&mut self) {
-        self.board.check(&self.win_tile);
+    #[cfg(test)]
+    fn spawn(&mut self) {
+        self.board.check(&self.win_tile).unwrap();
     }
 
-    pub fn check(&mut self) -> Result<GameState, Infallible> {
+    #[cfg(test)]
+    fn check(&mut self) -> Result<GameState, std::convert::Infallible> {
         self.board.check(&self.win_tile)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use indoc::indoc;
+
+    #[test]
+    fn in_progress() {
+        let state = indoc! {"
+        0,0,0,2
+        0,0,0,0
+        0,0,0,0
+        0,0,0,0   
+    "};
+
+        let mut game = Game::from(4, 2048, state);
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::InProgress);
+    }
+
+    #[test]
+    fn lost() {
+        let state = indoc! {"
+        2,4,2,4
+        4,2,4,2
+        2,4,2,4
+        4,2,4,2
+    "};
+
+        let mut game = Game::from(4, 2048, state);
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::Lost);
+    }
+
+    #[test]
+    fn won() {
+        let state = indoc! {"
+        2048,0,0,2
+        0,0,0,0
+        0,0,0,0
+        0,0,0,0   
+    "};
+
+        let mut game = Game::from(4, 2048, state);
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::Won);
+    }
+
+    #[test]
+    fn next_move_win() {
+        let state = indoc! {"
+        1024,1024,0,0
+        0,0,0,0
+        0,0,0,0
+        0,0,0,0   
+    "};
+
+        let mut game = Game::from(4, 2048, state);
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::InProgress);
+
+        game.play("left").unwrap();
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::Won);
+    }
+
+    #[test]
+    fn alter_winning_number() {
+        let state = indoc! {"
+        1024,1024,0,0
+        0,0,0,0
+        0,0,0,0
+        0,0,0,0   
+    "};
+
+        let mut game = Game::from(4, 4096, state);
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::InProgress);
+
+        game.play("left").unwrap();
+        let state = game.check().unwrap();
+        assert_eq!(state, GameState::InProgress);
+    }
+
+    #[test]
+    fn next_move_lose() {
+        let state = indoc! {"
+        8,16,8,16
+        16,8,16,8
+        8,16,8,16
+        8,16,8,0
+    "};
+
+        let mut game = Game::from(4, 2048, state);
+        let state = game.check().unwrap();
+
+        assert_eq!(state, GameState::InProgress);
+
+        game.play("right").unwrap();
+        game.spawn();
+        let state = game.check().unwrap();
+
+        assert_eq!(state, GameState::Lost);
     }
 }

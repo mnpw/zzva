@@ -1,14 +1,10 @@
 use rand::seq::SliceRandom;
 use std::{convert::Infallible, fmt::Display};
 
-use crate::{game::Move, tile::*};
-
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub enum GameState {
-    Won,
-    Lost,
-    InProgress,
-}
+use crate::{
+    state::{GameState, Move},
+    tile::*,
+};
 
 pub struct Board {
     size: usize,
@@ -124,7 +120,7 @@ impl Board {
         column
     }
 
-    pub fn play(&mut self, direction: &Move) -> Result<(), &str> {
+    pub fn play(&mut self, direction: &Move) -> Result<(), &'static str> {
         let mut any_tiles_combined = false;
 
         match *direction {
