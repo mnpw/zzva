@@ -1,10 +1,13 @@
-use zzva::game::*;
+use clap::Parser;
+use zzva::{cli::Args, game::*, state::GameState};
 
 fn main() {
-    const SIZE: usize = 4;
-    const MAX_TILE: usize = 16;
+    let args = Args::parse();
 
-    let mut game = Game::init(SIZE, MAX_TILE).unwrap();
+    let size = args.board;
+    let max_tile = args.max;
+
+    let mut game = Game::init(size.into(), max_tile.into()).unwrap();
 
     loop {
         println!("{}", game);
@@ -14,7 +17,16 @@ fn main() {
         std::io::stdin().read_line(&mut play).unwrap();
         let play = play.trim();
 
-        game.play(&play);
+        match game.play(&play) {
+            Ok(state) => {
+                println!("{}", state.message);
+                match state.game_state {
+                    GameState::Won | GameState::Lost => break,
+                    GameState::InProgress => continue,
+                }
+            }
+            Err(message) => eprintln!("[ERROR] {}", message),
+        }
         println!("\n\n");
     }
 }
