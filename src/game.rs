@@ -20,7 +20,7 @@ impl Display for Game {
 }
 
 impl Game {
-    pub fn init(size: usize, max_tile: usize) -> Result<Self, &'static str> {
+    pub fn new(size: usize, max_tile: usize) -> Result<Self, &'static str> {
         let mut board = Board::new(size);
         board.spawn()?;
         board.spawn()?;
