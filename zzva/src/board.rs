@@ -1,7 +1,7 @@
 use log::{debug, info, warn};
 use rand::seq::SliceRandom;
 use serde::Serialize;
-use std::{convert::Infallible, fmt::Display};
+use std::{convert::Infallible, fmt::Display, ops::Deref};
 
 use crate::{
     state::{GameState, Move},
@@ -229,7 +229,8 @@ impl Board {
 
         for row in &self.inner {
             for tile in row {
-                board.push_str(&format!("{},", tile.to_string()));
+                board.push_str(&tile.deref().to_string());
+                board.push(',');
             }
             board.push('\n');
         }
