@@ -1,8 +1,5 @@
 use actix_web::{web, App, HttpServer};
-use zzva_web::{
-    routes::{health_check, play, start, start_default, view},
-    state::AppState,
-};
+use zzva_web::{routes::*, state::AppState};
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -16,7 +13,7 @@ async fn main() -> std::io::Result<()> {
             .route("/start_default", web::post().to(start_default))
             .route("/play", web::post().to(play))
             .route("/view", web::get().to(view))
-            .route("/view_raw", web::get().to(view))
+            .route("/view_raw", web::get().to(view_raw))
     })
     .bind("0:8080")?
     .run()
