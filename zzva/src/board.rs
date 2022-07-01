@@ -7,6 +7,7 @@ use crate::{
     tile::*,
 };
 
+#[derive(Clone)]
 pub struct Board {
     size: usize,
     inner: Vec<Vec<Tile>>,

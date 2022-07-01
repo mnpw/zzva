@@ -6,11 +6,12 @@ use crate::{
     tile::Tile,
 };
 
+#[derive(Clone)]
 pub struct Game {
     _size: usize,
     board: Board,
     win_tile: Tile,
-    state: State,
+    pub state: State,
 }
 
 impl Display for Game {
