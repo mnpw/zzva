@@ -14,6 +14,7 @@ async fn main() -> std::io::Result<()> {
             .route("/play", web::post().to(play))
             .route("/view", web::get().to(view))
             .route("/view_raw", web::get().to(view_raw))
+            .route("/status", web::get().to(status))
     })
     .bind("0:8080")?
     .run()
