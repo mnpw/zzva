@@ -1,7 +1,7 @@
 use actix_web::{web, App, HttpServer};
 use zzva_web::{
     routes::{health_check, play, start, start_default, view},
-    AppState,
+    state::AppState,
 };
 
 #[tokio::main]
