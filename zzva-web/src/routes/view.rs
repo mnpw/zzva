@@ -1,6 +1,6 @@
 use actix_web::{web, HttpResponse};
 
-use crate::AppState;
+use crate::state::AppState;
 
 pub async fn view(app: web::Data<AppState>) -> HttpResponse {
     match app.get_game().as_mut() {

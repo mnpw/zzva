@@ -2,7 +2,7 @@ use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 use zzva::game::Game;
 
-use crate::AppState;
+use crate::state::AppState;
 
 #[derive(Deserialize)]
 pub struct Config {

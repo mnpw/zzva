@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 
-use crate::AppState;
+use crate::state::AppState;
 
 #[derive(Deserialize)]
 pub struct Move {
