@@ -11,7 +11,7 @@ pub struct Game {
     _size: usize,
     board: Board,
     win_tile: Tile,
-    pub state: State,
+    state: State,
 }
 
 impl Display for Game {
@@ -74,6 +74,14 @@ impl Game {
         };
 
         Ok(self.state.clone())
+    }
+
+    pub fn get_board(&self) -> &Board {
+        &self.board
+    }
+
+    pub fn get_state(&self) -> &State {
+        &self.state
     }
 
     #[cfg(test)]
