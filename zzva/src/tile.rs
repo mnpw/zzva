@@ -4,8 +4,9 @@ use std::{
 };
 
 use rand::Rng;
+use serde::Serialize;
 
-#[derive(Clone, PartialEq, Debug, Copy)]
+#[derive(Clone, PartialEq, Debug, Copy, Serialize)]
 pub struct Tile(usize);
 
 impl Tile {

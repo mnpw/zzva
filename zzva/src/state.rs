@@ -1,12 +1,14 @@
 use std::fmt::Display;
 
+use serde::Serialize;
+
 #[derive(Default, Clone)]
 pub struct State {
     pub game_state: GameState,
     pub message: String,
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Serialize)]
 pub enum GameState {
     Won,
     Lost,

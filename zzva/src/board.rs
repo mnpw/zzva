@@ -1,5 +1,6 @@
 use log::{debug, info, warn};
 use rand::seq::SliceRandom;
+use serde::Serialize;
 use std::{convert::Infallible, fmt::Display};
 
 use crate::{
@@ -7,7 +8,7 @@ use crate::{
     tile::*,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct Board {
     size: usize,
     inner: Vec<Vec<Tile>>,
