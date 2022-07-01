@@ -15,10 +15,6 @@ pub async fn play(form: web::Form<Move>, app: web::Data<AppState>) -> HttpRespon
         Some(game) => match game.play(mv) {
             Ok(res) => {
                 *app.get_state() = Some(res.clone());
-                match res.game_state {
-                    GameState::Won | GameState::Lost => app.reset_game(),
-                    GameState::InProgress => todo!(),
-                }
             }
             Err(_) => {
                 return HttpResponse::InternalServerError().body("Could not play the move!");
@@ -28,6 +24,11 @@ pub async fn play(form: web::Form<Move>, app: web::Data<AppState>) -> HttpRespon
             return HttpResponse::BadRequest().body("Game is uninitialized!");
         }
     };
+
+    match app.get_state().as_ref().unwrap().game_state {
+        GameState::Won | GameState::Lost => app.reset_game(),
+        GameState::InProgress => (),
+    }
 
     HttpResponse::Ok().finish()
 }
