@@ -1,5 +1,6 @@
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
+use zzva::state::GameState;
 
 use crate::state::AppState;
 
@@ -13,7 +14,11 @@ pub async fn play(form: web::Form<Move>, app: web::Data<AppState>) -> HttpRespon
     match app.get_game().as_mut() {
         Some(game) => match game.play(mv) {
             Ok(res) => {
-                *app.get_state() = Some(res);
+                *app.get_state() = Some(res.clone());
+                match res.game_state {
+                    GameState::Won | GameState::Lost => app.reset_game(),
+                    GameState::InProgress => todo!(),
+                }
             }
             Err(_) => {
                 return HttpResponse::InternalServerError().body("Could not play the move!");
