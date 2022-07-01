@@ -224,6 +224,19 @@ impl Board {
         }
     }
 
+    pub fn get_raw_board_state(&self) -> String {
+        let mut board = String::new();
+
+        for row in &self.inner {
+            for tile in row {
+                board.push_str(&format!("{},", tile.to_string()));
+            }
+            board.push('\n');
+        }
+
+        board
+    }
+
     /// Collapse a row of tiles in right to left direction.
     ///
     /// [2, 2, 4, 2] collapses in [4, 4, 2]

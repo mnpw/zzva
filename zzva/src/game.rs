@@ -80,6 +80,10 @@ impl Game {
         &self.board
     }
 
+    pub fn get_raw_state(&self) -> String {
+        self.board.get_raw_board_state()
+    }
+
     pub fn get_state(&self) -> &State {
         &self.state
     }
