@@ -21,6 +21,16 @@ impl Default for GameState {
     }
 }
 
+impl Display for GameState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GameState::Won => write!(f, "Won"),
+            GameState::Lost => write!(f, "Lost"),
+            GameState::InProgress => write!(f, "InProgress"),
+        }
+    }
+}
+
 #[derive(PartialEq)]
 pub enum Move {
     Up,
